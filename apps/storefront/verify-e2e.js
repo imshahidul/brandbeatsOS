@@ -103,10 +103,23 @@ async function main() {
   await waitFor(`${API_URL}/v1/health`, 60000, 'API');
 
   // Seed a platform_admin directly (register() only creates merchants).
+  // synchronize may still be running when /health first responds; retry.
   const argon2 = require('argon2');
   const { Client } = require('pg');
-  const pg = new Client({ connectionString: DB_URL });
-  await pg.connect();
+  let pg = null;
+  for (let i = 0; i < 30; i++) {
+    const candidate = new Client({ connectionString: DB_URL });
+    try {
+      await candidate.connect();
+      await candidate.query('SELECT 1 FROM users LIMIT 1');
+      pg = candidate;
+      break;
+    } catch {
+      try { await candidate.end(); } catch {}
+      await sleep(2000);
+    }
+  }
+  if (!pg) throw new Error('users table never appeared after boot');
   const { randomUUID } = require('crypto');
   const adminId = randomUUID();
   const hash = await argon2.hash('AdminPass123!', { type: argon2.argon2id });

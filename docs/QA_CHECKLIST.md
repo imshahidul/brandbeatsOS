@@ -20,7 +20,11 @@ Run from `apps/api` (and `packages/theme-sdk` for the SDK):
 end-to-end), **+ 25 storefront checks** (`verify-storefront.tsx`: render,
 sandboxing, XSS), **+ 25 end-to-end checks** (`verify-e2e.js`: real API +
 storefront over HTTP), **+ 29 admin dashboard checks** (`verify-admin.tsx`: role
-gating, admin forms, page wiring, new API routes). **Grand total: 268 automated checks.**
+gating, admin forms, page wiring, new API routes), **+ 8 products checks**
+(`verify-products.js`: tenant-scoped catalog CRUD, DTO validation),
+**+ 5 product render/XSS checks** (`verify-storefront.tsx` now 30: real
+product rails, collection filter, ৳ formatting, image-URL sanitizing).
+**Grand total: 276 automated checks.**
 Full clean `tsc` build + `nest build` + `next build`.
 
 ## 2. Acceptance criteria (spec §16) — honest mapping

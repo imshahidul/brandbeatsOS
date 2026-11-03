@@ -1,4 +1,6 @@
 import React from 'react';
+import type { ProductSummary } from '../lib/preview';
+import { formatPrice, productGradient } from '../lib/products';
 
 /**
  * Data-driven section renderers. Every renderer is defensive:
@@ -19,6 +21,7 @@ export interface SectionProps {
   settings: Record<string, unknown>;
   theme: ThemeTokens;
   mode: 'preview' | 'live';
+  products?: ProductSummary[];
 }
 
 const str = (v: unknown, fallback = ''): string =>
@@ -97,51 +100,80 @@ export function HeroBanner({ settings, theme }: SectionProps) {
   );
 }
 
-export function ProductRail({ settings, theme, mode }: SectionProps) {
+/** Only http(s) image URLs are rendered (API validates, this is defense in depth). */
+const safeImg = (v: string | null): string | null =>
+  v && /^https?:\/\//i.test(v) ? v : null;
+
+export function ProductRail({ settings, theme, mode, products = [] }: SectionProps) {
   const heading = str(settings.heading, 'Products');
   const collection = str(settings.collection, 'all');
   const limit = Math.min(Math.max(num(settings.limit, 4), 1), 24);
+  const items = products
+    .filter((p) => collection === 'all' || p.collection === collection)
+    .slice(0, limit);
 
   return (
     <section style={{ margin: '24px 0' }}>
       <h2 style={{ fontSize: 26, margin: '0 0 16px' }}>{heading}</h2>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-          gap: 16,
-        }}
-      >
-        {Array.from({ length: limit }, (_, i) => (
-          <div
-            key={i}
-            style={{
-              border: '1px solid #e5e5e5',
-              borderRadius: theme.radius,
-              padding: 16,
-              background: '#fff',
-            }}
-          >
-            <div
-              style={{
-                height: 120,
-                background: '#f1f1f1',
-                borderRadius: theme.radius,
-                marginBottom: 12,
-              }}
-            />
-            <p style={{ margin: 0, fontSize: 13, color: '#777' }}>
-              {mode === 'preview'
-                ? `Product ${i + 1} · ${collection}`
-                : `Product ${i + 1}`}
-            </p>
-          </div>
-        ))}
-      </div>
-      {mode === 'preview' && (
-        <p style={{ fontSize: 12, color: '#999', marginTop: 8 }}>
-          Live product data appears here once the catalog is connected.
+      {items.length === 0 ? (
+        <p style={{ fontSize: 13, color: '#999' }}>
+          {mode === 'preview'
+            ? 'Add products to this collection from your dashboard to see them here.'
+            : 'No products yet.'}
         </p>
+      ) : (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+            gap: 16,
+          }}
+        >
+          {items.map((p) => {
+            const img = safeImg(p.imageUrl);
+            return (
+              <div
+                key={p.id}
+                style={{
+                  border: '1px solid #e5e5e5',
+                  borderRadius: theme.radius,
+                  padding: 16,
+                  background: '#fff',
+                }}
+              >
+                <div
+                  style={{
+                    height: 120,
+                    borderRadius: theme.radius,
+                    marginBottom: 12,
+                    background: img ? undefined : productGradient(p.name),
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {img ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={img}
+                      alt={p.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <span style={{ fontSize: 36, fontWeight: 700, color: 'rgba(0,0,0,0.25)' }}>
+                      {p.name.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600 }}>{p.name}</p>
+                <p style={{ margin: 0, fontSize: 13, color: theme.primaryColor, fontWeight: 600 }}>
+                  {formatPrice(p.price, p.currency)}
+                </p>
+              </div>
+            );
+          })}
+        </div>
       )}
     </section>
   );

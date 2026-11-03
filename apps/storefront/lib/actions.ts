@@ -2,6 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 import { login, fetchMyTenants } from './preview';
 import {
   decodeRoles,
@@ -104,6 +105,7 @@ export async function createThemeAction(
     const name = String(formData.get('name') ?? '').trim();
     if (!slug || !name) return fail('Slug and name are required.');
     const theme = await createTheme(token, { slug, name });
+    revalidatePath('/admin');
     return { ok: true, message: `Theme "${theme.name}" created.` };
   } catch (e) {
     return fail(e instanceof Error ? e.message : 'Create failed.');
@@ -131,6 +133,7 @@ export async function publishVersionAction(
       configSchema,
       changelog: changelog || undefined,
     });
+    revalidatePath('/admin');
     return { ok: true, message: `Version ${v.version} published (immutable).` };
   } catch (e) {
     return fail(e instanceof Error ? e.message : 'Publish failed.');
@@ -152,6 +155,7 @@ export async function setVisibilityAction(
       return fail('Invalid visibility.');
     }
     const theme = await setThemeVisibility(token, themeId, visibility);
+    revalidatePath('/admin');
     return { ok: true, message: `"${theme.name}" is now ${theme.visibility}.` };
   } catch (e) {
     return fail(e instanceof Error ? e.message : 'Update failed.');
@@ -173,3 +177,55 @@ export async function runAutoApplyAction(_prev: ActionState): Promise<ActionStat
 
 // Re-exported for pages that only need the role check without a redirect.
 export { decodeRoles };
+
+/* ---------------- Merchant product catalog ---------------- */
+
+async function merchantSession(): Promise<{ token: string; tenantId: string }> {
+  const jar = await cookies();
+  const token = jar.get('bb_token')?.value;
+  const tenantId = jar.get('bb_tenant')?.value;
+  if (!token || !tenantId) throw new Error('Not signed in');
+  return { token, tenantId };
+}
+
+export async function createProductAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  try {
+    const { token, tenantId } = await merchantSession();
+    const name = String(formData.get('name') ?? '').trim();
+    if (!name) return fail('Product name is required.');
+    const priceRaw = String(formData.get('price') ?? '').trim();
+    const price = priceRaw === '' ? 0 : Number(priceRaw);
+    if (!Number.isFinite(price) || price < 0) return fail('Price must be a non-negative number.');
+    const { createProduct } = await import('./products');
+    const p = await createProduct(token, tenantId, {
+      name,
+      price,
+      collection: String(formData.get('collection') ?? '').trim() || undefined,
+      description: String(formData.get('description') ?? '').trim() || undefined,
+    });
+    revalidatePath('/dashboard');
+    return { ok: true, message: `"${p.name}" added to your catalog.` };
+  } catch (e) {
+    return fail(e instanceof Error ? e.message : 'Could not add product.');
+  }
+}
+
+export async function deleteProductAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  try {
+    const { token, tenantId } = await merchantSession();
+    const id = String(formData.get('id') ?? '');
+    if (!id) return fail('Missing product id.');
+    const { deleteProduct } = await import('./products');
+    await deleteProduct(token, tenantId, id);
+    revalidatePath('/dashboard');
+    return { ok: true, message: 'Product deleted.' };
+  } catch (e) {
+    return fail(e instanceof Error ? e.message : 'Could not delete product.');
+  }
+}

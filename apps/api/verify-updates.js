@@ -10,6 +10,7 @@ const { ThemesService } = require('./dist/themes/themes.service');
 const { MarketplaceService } = require('./dist/marketplace/marketplace.service');
 const { TenantsService } = require('./dist/tenants/tenants.service');
 const { CustomizerService } = require('./dist/customizer/customizer.service');
+const { ProductsService } = require('./dist/products/products.service');
 const { UpdatesService } = require('./dist/updates/updates.service');
 
 class FakeRepo {
@@ -65,7 +66,7 @@ const GOOD_SECTIONS = [
   const sharedInstalls = new FakeRepo();
   const sharedStagings = new FakeRepo();
   const market2 = new MarketplaceService(themes, sharedInstalls);
-  const cust2 = new CustomizerService(themes, market2, tenants, sharedDrafts, sharedSnaps);
+  const cust2 = new CustomizerService(themes, market2, tenants, new ProductsService(new FakeRepo()), sharedDrafts, sharedSnaps);
   const T = new UpdatesService(themes, market2, cust2, sharedStagings, sharedSnaps, sharedDrafts, sharedInstalls);
 
   // Seed: tenant, theme v1.0.0 public, install, customized + published

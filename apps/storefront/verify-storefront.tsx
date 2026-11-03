@@ -31,6 +31,12 @@ const doc: PreviewDocument = {
     brand: { primaryColor: '#b3123f', accentColor: '#f59e0b', fontFamily: 'playfair' },
     layout: { borderRadius: 'lg', containerWidth: 'wide' },
   },
+  products: [
+    { id: 'p1', name: 'Silk Panjabi', price: 1899, currency: 'BDT', imageUrl: null, collection: 'best-sellers' },
+    { id: 'p2', name: 'Denim Jacket', price: 2499.5, currency: 'BDT', imageUrl: null, collection: 'best-sellers' },
+    { id: 'p3', name: '<img src=x onerror=alert(1)>', price: 999, currency: 'BDT', imageUrl: 'javascript:alert(1)', collection: 'best-sellers' },
+    { id: 'p4', name: 'Kurti', price: 1299, currency: 'BDT', imageUrl: null, collection: 'new-arrivals' },
+  ],
   sections: [
     {
       id: 'sec-hero',
@@ -69,6 +75,11 @@ check('container width applied', html.includes('1140px'));
 check('hero title rendered', html.includes('Wear the moment'));
 check('hero button rendered', html.includes('Shop now') && html.includes('/collections/new'));
 check('product rail heading rendered', html.includes('Best sellers'));
+check('real product names rendered', html.includes('Silk Panjabi') && html.includes('Denim Jacket'));
+check('product price formatted with ৳', html.includes('৳1,899'));
+check('rail filters by collection (new-arrivals hidden)', !html.includes('Kurti'));
+check('product name XSS escaped', !html.includes('<img src=x') && html.includes('&lt;img'));
+check('javascript: image src blocked', !/src="javascript:/i.test(html));
 check('hidden section excluded', !html.includes('HIDDEN TITLE'));
 check('unknown section shows preview placeholder', html.includes('video-showcase'));
 

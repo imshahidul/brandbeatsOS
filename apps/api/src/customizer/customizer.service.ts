@@ -15,6 +15,7 @@ import { ThemeVersion } from '../themes/theme-version.entity';
 import { MarketplaceService } from '../marketplace/marketplace.service';
 import { ThemeInstall } from '../marketplace/theme-install.entity';
 import { TenantsService } from '../tenants/tenants.service';
+import { ProductsService } from '../products/products.service';
 import { MerchantThemeSettings } from './merchant-theme-settings.entity';
 import { PublishedSnapshot } from './published-snapshot.entity';
 import { SectionInstanceDto } from './dto/customizer.dto';
@@ -32,6 +33,7 @@ export class CustomizerService {
     private readonly themes: ThemesService,
     private readonly marketplace: MarketplaceService,
     private readonly tenants: TenantsService,
+    private readonly products: ProductsService,
     @InjectRepository(MerchantThemeSettings)
     private readonly drafts: Repository<MerchantThemeSettings>,
     @InjectRepository(PublishedSnapshot)
@@ -214,6 +216,15 @@ export class CustomizerService {
       sections: (draft.sections as unknown as SectionInstanceDto[]).filter(
         (s) => !s.hidden,
       ),
+      // Active products for product rails / showcases (real merchant data).
+      products: (await this.products.listActive(install.tenantId)).map((p) => ({
+        id: p.id,
+        name: p.name,
+        price: Number(p.price),
+        currency: p.currency,
+        imageUrl: p.imageUrl,
+        collection: p.collection,
+      })),
     };
   }
 }

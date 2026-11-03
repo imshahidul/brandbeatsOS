@@ -14,6 +14,7 @@ import { MarketplaceModule } from './marketplace/marketplace.module';
 import { AdminModule } from './admin/admin.module';
 import { CustomizerModule } from './customizer/customizer.module';
 import { UpdatesModule } from './updates/updates.module';
+import { ProductsModule } from './products/products.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
@@ -32,6 +33,7 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
     AdminModule,
     CustomizerModule,
     UpdatesModule,
+    ProductsModule,
   ],
   controllers: [HealthController],
   providers: [

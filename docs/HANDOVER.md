@@ -125,6 +125,20 @@ node packages/theme-sdk/verify.js
   Verified by `verify-admin.tsx` (29 checks: role helpers, form components,
   page wiring, API routes) — `npm run verify` now runs both suites
   (25 + 29 checks).
+- Merchant product catalog (`apps/api/src/products/`): tenant-scoped CRUD
+  (`GET/POST /v1/products`, `GET /v1/products/active?collection=`,
+  `PATCH/DELETE /v1/products/:id`, `TenantGuard`), price in major units
+  (default BDT), collections, active/hidden flag. New migration
+  `1793790000000-AddProducts.ts` (schema-drift guard still green:
+  entities == migration). `CustomizerService.getPreview()` now embeds active
+  products, so product rails render real merchant data; `ProductRail`
+  filters by collection, respects `limit`, shows ৳-formatted prices and
+  gradient tiles (initial letter) for imageless products, `javascript:` image
+  URLs blocked. Merchant dashboard (`/dashboard`) enriched: stats
+  (products / collections / themes), product table (name, collection, price,
+  status, delete), add-product form, theme cards — all mutations revalidate
+  the page. Verified by `verify-products.js` (8 checks) + 6 new
+  render/XSS checks in `verify-storefront.tsx` (now 30).
 
 ## Production notes
 

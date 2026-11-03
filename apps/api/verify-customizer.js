@@ -10,6 +10,7 @@ const { ThemesService } = require('./dist/themes/themes.service');
 const { MarketplaceService } = require('./dist/marketplace/marketplace.service');
 const { TenantsService } = require('./dist/tenants/tenants.service');
 const { CustomizerService } = require('./dist/customizer/customizer.service');
+const { ProductsService } = require('./dist/products/products.service');
 
 class FakeRepo {
   constructor() { this.rows = []; this.seq = 1; }
@@ -62,7 +63,7 @@ const GOOD_SECTIONS = [
   const themes = new ThemesService(new FakeRepo(), new FakeRepo());
   const marketplace = new MarketplaceService(themes, new FakeRepo());
   const tenants = new TenantsService(new FakeRepo(), new FakeRepo());
-  const customizer = new CustomizerService(themes, marketplace, tenants, new FakeRepo(), new FakeRepo());
+  const customizer = new CustomizerService(themes, marketplace, tenants, new ProductsService(new FakeRepo()), new FakeRepo(), new FakeRepo());
 
   // Seed
   const tenant = await tenants.create('user-1', { name: 'My Fashion Store' });
@@ -186,6 +187,7 @@ const GOOD_SECTIONS = [
     assert.strictEqual(preview.settings.brand.accentColor, '#c9a227');
     assert.strictEqual(preview.sections.length, 1, 'hidden sections filtered');
     assert.strictEqual(preview.sections[0].id, 'sec_hero_1');
+    assert.ok(Array.isArray(preview.products), 'preview embeds product list');
     ok('preview assembles white-label branding + settings + visible sections');
   }
 

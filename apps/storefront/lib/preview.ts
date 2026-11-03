@@ -41,6 +41,18 @@ export interface PreviewDocument {
   };
   settings: ThemeSettings;
   sections: SectionInstance[];
+  /** Active products of the merchant (for product rails / showcases). */
+  products: ProductSummary[];
+}
+
+/** Product as embedded in the preview document. */
+export interface ProductSummary {
+  id: string;
+  name: string;
+  price: number;
+  currency: string;
+  imageUrl: string | null;
+  collection: string;
 }
 
 const API_URL = process.env.API_URL ?? 'http://localhost:3000';

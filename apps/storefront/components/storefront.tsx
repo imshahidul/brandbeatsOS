@@ -1,5 +1,5 @@
 import React from 'react';
-import type { PreviewDocument, SectionInstance } from '../lib/preview';
+import type { PreviewDocument, SectionInstance, ProductSummary } from '../lib/preview';
 import {
   HeroBanner,
   ProductRail,
@@ -37,16 +37,18 @@ function SectionRenderer({
   section,
   theme,
   mode,
+  products,
 }: {
   section: SectionInstance;
   theme: ThemeTokens;
   mode: 'preview' | 'live';
+  products: ProductSummary[];
 }) {
   switch (section.type) {
     case 'hero-banner':
       return <HeroBanner settings={section.settings} theme={theme} mode={mode} />;
     case 'product-rail':
-      return <ProductRail settings={section.settings} theme={theme} mode={mode} />;
+      return <ProductRail settings={section.settings} theme={theme} mode={mode} products={products} />;
     default:
       return <UnknownSection type={section.type} mode={mode} />;
   }
@@ -94,7 +96,7 @@ export function Storefront({
         {doc.sections
           .filter((s) => !s.hidden)
           .map((s) => (
-            <SectionRenderer key={s.id} section={s} theme={theme} mode={mode} />
+            <SectionRenderer key={s.id} section={s} theme={theme} mode={mode} products={doc.products ?? []} />
           ))}
       </main>
 
