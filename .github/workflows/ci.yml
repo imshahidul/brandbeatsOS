@@ -56,10 +56,10 @@ jobs:
         working-directory: apps/api
         run: npx nest build
 
-      - name: Verify API (50 checks)
+      - name: Verify API (58 checks)
         working-directory: apps/api
         run: |
-          for f in verify-phase1.js verify-themes.js verify-marketplace.js verify-customizer.js verify-updates.js; do
+          for f in verify-phase1.js verify-themes.js verify-marketplace.js verify-customizer.js verify-updates.js verify-products.js; do
             echo "== $f"
             node "$f" || exit 1
           done
