@@ -13,7 +13,14 @@ Run from `apps/api` (and `packages/theme-sdk` for the SDK):
 | `verify-updates.js` | Update detection, compatibility reports, staging, blocked applies, rollback, auto-apply safety | 10 ✅ |
 | `packages/theme-sdk/verify.js` | Manifest validation, rejection paths, settings validation, helpers | 9 ✅ |
 
-**Total: 59 automated checks, all passing.** Full clean `tsc` build + `nest build`.
+**Total: 59 automated checks, all passing** (Phases 0–6), **+ 116 migration checks**
+(`verify-migrations.js`: real up/down on PostgreSQL), **+ schema-drift guard**
+(`verify-migration-schema.js`: entities == migration), **+ 13 worker checks**
+(`verify-worker.js`: real boot on PostgreSQL + Redis, auto-apply, BullMQ
+end-to-end), **+ 25 storefront checks** (`verify-storefront.tsx`: render,
+sandboxing, XSS), **+ 25 end-to-end checks** (`verify-e2e.js`: real API +
+storefront over HTTP). **Grand total: 239 automated checks.**
+Full clean `tsc` build + `nest build` + `next build`.
 
 ## 2. Acceptance criteria (spec §16) — honest mapping
 

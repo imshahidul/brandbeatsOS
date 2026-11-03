@@ -6,6 +6,7 @@ import { UpdatesController } from './updates.controller';
 import { ThemesModule } from '../themes/themes.module';
 import { MarketplaceModule } from '../marketplace/marketplace.module';
 import { CustomizerModule } from '../customizer/customizer.module';
+import { TenantsModule } from '../tenants/tenants.module';
 import { MerchantThemeSettings } from '../customizer/merchant-theme-settings.entity';
 import { PublishedSnapshot } from '../customizer/published-snapshot.entity';
 import { ThemeInstall } from '../marketplace/theme-install.entity';
@@ -15,6 +16,10 @@ import { ThemeInstall } from '../marketplace/theme-install.entity';
     ThemesModule,
     MarketplaceModule,
     CustomizerModule,
+    // UpdatesController uses @UseGuards(TenantGuard), which injects
+    // TenantsService — the module must import it directly to be valid
+    // standalone (e.g. when reused by apps/worker).
+    TenantsModule,
     TypeOrmModule.forFeature([
       UpdateStaging,
       PublishedSnapshot,

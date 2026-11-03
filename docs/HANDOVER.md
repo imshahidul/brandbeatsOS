@@ -62,14 +62,57 @@ node packages/theme-sdk/verify.js
 
 ## Honest backlog (not done yet)
 
-- `apps/worker` (BullMQ): preview builds, notification delivery, scheduled auto-apply.
 - Storefront renderer + merchant dashboard frontend (Next.js) consuming the
   preview/published documents; sandboxed iframe renderer.
 - Paid theme enforcement (monetization field exists; no billing wired).
-- Push/email notifications for update availability (currently pull via `GET /v1/updates`).
-- Production DB migrations (dev uses `synchronize`; prod must use migrations).
+- Push/email notifications for update availability (currently pull via `GET /v1/updates`;
+  the `update-notifications` queue exists, processor returns an explicit
+  not-implemented marker until a provider is wired).
 - Theme publish pipeline: dependency scanning, automated responsive/a11y/perf tests.
-- CI pipeline running all `verify-*.js` scripts on every PR.
+
+## Done after handover (see git log)
+
+- Critical bug fixes found by the end-to-end test (the app could not actually
+  boot or log in before these):
+  - `AuthModule` now exports `JwtModule` — `JwtAuthGuard` (an `APP_GUARD`)
+    injects `JwtService`, which was invisible in `AppModule`'s scope, so
+    `node dist/main.js` died with `UnknownDependenciesException` on boot.
+  - `AuthService.toTokens()` is async but was spread without `await` in
+    `register`/`login`/`refresh` — spreading a Promise yields `{}`, so
+    login responses contained NO tokens at all.
+- Storefront (`apps/storefront`, Next.js): merchant login (httpOnly cookie),
+  dashboard (install list), and a sandboxed live preview —
+  `GET /v1/customizer/installs/:id/preview` rendered to static HTML
+  (zero `<script>` tags) and served through `<iframe sandbox="">` plus a
+  `Content-Security-Policy: sandbox` header. Data-driven section renderers
+  (hero-banner, product-rail) with graceful degradation for unknown section
+  types; `javascript:` links sanitized; all text React-escaped. Verified by
+  `verify-storefront.tsx` (25 checks incl. XSS attacks) and `verify-e2e.js`
+  (full end-to-end: real API + real storefront, seeded over HTTP).
+
+- Worker app (`apps/worker`): NestJS application context (no HTTP) reusing the
+  API's DatabaseModule + UpdatesModule. Scheduled auto-apply every
+  `AUTO_APPLY_INTERVAL_MS` (default 6h) via `UpdatesService.autoApplyAll()`
+  (compatible-only, never force-updates). BullMQ queue topology
+  (`update-notifications`, `preview-builds`) on Redis; processors start when
+  `WORKER_QUEUES_ENABLED=true`. Verified by `verify-worker.js` (13 checks:
+  real boot on PostgreSQL + Redis, auto-apply on empty DB, overlap guard,
+  end-to-end job processing). Production: `deploy/docker-compose.yml` runs the
+  worker after the API is healthy (the API owns migrations). Dockerfiles added
+  for `apps/api` and `apps/worker` (+ `.dockerignore`); compose `build:`
+  targets now actually work.
+- Fixed: `UpdatesModule` now imports `TenantsModule` directly — its controller
+  uses `@UseGuards(TenantGuard)` (injects `TenantsService`), so the module is
+  valid standalone instead of relying on AppModule's flat imports.
+- Production DB migrations: `apps/api/src/database/migrations/1793702244000-InitialSchema.ts`
+  (all 11 tables). Production boots with `migrationsRun: true` and never
+  synchronizes (`src/database/database.module.ts`). Verified by
+  `verify-migrations.js` (116 checks: real up/down on PostgreSQL) and
+  `verify-migration-schema.js` (schema-drift guard: entities == migration).
+  CI runs both on every PR. New migrations: `npm run migration:generate`
+  (from `apps/api`), hand-review before committing.
+- CI pipeline: `.github/workflows/ci.yml` runs all `verify-*.js` scripts
+  plus `npm audit` on every push/PR.
 
 ## Production notes
 

@@ -4,11 +4,35 @@ services:
     env_file: ../.env
     depends_on: [db, redis]
     restart: unless-stopped
+    healthcheck:
+      # PORT defaults to 3000 (see .env.example); keep in sync if changed.
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   worker:
     build: ../apps/worker
     env_file: ../.env
-    depends_on: [db, redis]
+    environment:
+      WORKER_QUEUES_ENABLED: "true"
+    # The API owns schema migrations (migrationsRun in production), so the
+    # worker only boots once the API is healthy — they never race.
+    depends_on:
+      db: { condition: service_started }
+      redis: { condition: service_started }
+      api: { condition: service_healthy }
+    restart: unless-stopped
+
+  storefront:
+    build: ../apps/storefront
+    env_file: ../.env
+    environment:
+      # In-compose DNS: the API is reachable as http://api:3000.
+      API_URL: http://api:3000
+      PORT: "3100"
+    depends_on: [api]
     restart: unless-stopped
 
   db:

@@ -1,3 +1,10 @@
 {$DOMAIN} {
 	reverse_proxy api:3000
 }
+
+# Merchant dashboard + sandboxed storefront preview.
+# Needs a DNS A record for app.<domain> pointing at the VPS
+# (or a wildcard *.{$DOMAIN} record).
+app.{$DOMAIN} {
+	reverse_proxy storefront:3100
+}

@@ -53,7 +53,7 @@ export class AuthService {
       action: 'auth.register',
     });
 
-    return { ...this.toTokens(user), user: this.users.toSafe(user), tenant };
+    return { ...(await this.toTokens(user)), user: this.users.toSafe(user), tenant };
   }
 
   async login(dto: LoginDto) {
@@ -67,7 +67,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
     await this.audit.log({ actorUserId: user.id, action: 'auth.login' });
-    return { ...this.toTokens(user), user: this.users.toSafe(user) };
+    return { ...(await this.toTokens(user)), user: this.users.toSafe(user) };
   }
 
   /** Rotates the refresh token: the old one is revoked, a new pair is issued. */
@@ -83,7 +83,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
     await this.refreshTokens.update(stored.id, { revokedAt: new Date() });
-    return { ...this.toTokens(user), user: this.users.toSafe(user) };
+    return { ...(await this.toTokens(user)), user: this.users.toSafe(user) };
   }
 
   async logout(rawToken: string): Promise<{ ok: true }> {

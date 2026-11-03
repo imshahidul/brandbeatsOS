@@ -27,5 +27,8 @@ import { AuditModule } from '../audit/audit.module';
   ],
   controllers: [AuthController],
   providers: [AuthService],
+  // JwtModule is exported so AppModule's APP_GUARDs (JwtAuthGuard injects
+  // JwtService) can resolve it. Without this the app cannot boot.
+  exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

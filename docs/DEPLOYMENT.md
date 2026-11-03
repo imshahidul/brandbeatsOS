@@ -27,7 +27,9 @@ docker compose -f deploy/docker-compose.yml up -d --build
 ## VPS setup, step by step (~30 minutes, ~$5–10/mo)
 
 1. **Provision:** any 2 GB RAM VPS (Hetzner, DigitalOcean, etc.), Ubuntu 24.04.
-2. **DNS:** point `A` record of your domain at the VPS IP.
+2. **DNS:** point `A` records of your domain AND `app.<domain>` at the VPS IP.
+   (The merchant dashboard + storefront preview live at `app.<domain>`; a
+   wildcard `*.` record also works.)
 3. **Harden SSH:**
    ```bash
    # disable password login, keep key-only
@@ -43,7 +45,13 @@ docker compose -f deploy/docker-compose.yml up -d --build
    NODE_ENV=production docker compose -f deploy/docker-compose.yml up -d --build
    ```
    The API refuses to boot in production with placeholder secrets.
-6. **Verify:** `curl https://your-domain/v1/health` → `{"ok":true,...}`
+   On first production boot the API automatically runs pending DB migrations
+   (`migrationsRun: true`); it never uses `synchronize` in production.
+   Check migration status anytime with, from `apps/api`:
+   `DATABASE_URL=... npx typeorm migration:show -d dist/database/data-source.js` (after `npm run build`).
+6. **Verify:** `curl https://your-domain/v1/health` → `{"ok":true,...}` and
+   open `https://app.your-domain` for the merchant dashboard. Validate the
+   compose file first with `docker compose -f deploy/docker-compose.yml config`.
 7. **Backups:** install the nightly backup cron:
    ```bash
    sudo cp deploy/backup.sh /usr/local/bin/bb-backup
