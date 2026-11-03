@@ -1,0 +1,255 @@
+# Brand Beats OS — CI
+#
+# Runs on every push to main and every pull request:
+#  - builds the theme SDK and the API
+#  - runs all 59 automated verification checks
+#  - fails on high-severity dependency vulnerabilities
+#
+# These are the same scripts documented in docs/QA_CHECKLIST.md.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build theme-sdk
+        run: npm run build --workspace=@brand-beats/theme-sdk
+
+      - name: Verify theme-sdk (9 checks)
+        run: node packages/theme-sdk/verify.js
+
+      - name: Type-check API
+        run: npx tsc --noEmit -p apps/api/tsconfig.json
+
+      - name: Build API
+        working-directory: apps/api
+        run: npx nest build
+
+      - name: Verify API (50 checks)
+        working-directory: apps/api
+        run: |
+          for f in verify-phase1.js verify-themes.js verify-marketplace.js verify-customizer.js verify-updates.js; do
+            echo "== $f"
+            node "$f" || exit 1
+          done
+
+      - name: Security audit (fail on high+)
+        run: npm audit --audit-level=high
+
+      - name: Boot smoke test (catches DI wiring + auth bugs)
+        working-directory: apps/api
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/bb_boot_test
+          JWT_SECRET: ci-test-secret-not-for-production
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -c "CREATE DATABASE bb_boot_test;"
+          (node dist/main.js > /tmp/api-boot.log 2>&1 &)
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000/v1/health > /dev/null; then break; fi
+            sleep 2
+          done
+          curl -sf http://localhost:3000/v1/health
+          # register must return real tokens (regression: un-awaited toTokens)
+          TOKEN=$(curl -s -X POST http://localhost:3000/v1/auth/register \
+            -H 'Content-Type: application/json' \
+            -d '{"email":"ci@test.com","password":"Password123!"}' \
+            | python3 -c "import json,sys; print(json.load(sys.stdin).get('accessToken',''))")
+          test -n "$TOKEN" && echo "auth returns tokens"
+          pkill -f "[d]ist/main.js" || true
+
+  migrations:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build API
+        run: npm run build --workspace=@brand-beats/api
+
+      - name: Create test databases
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -c "CREATE DATABASE bb_migration_test;"
+          psql -h localhost -U postgres -c "CREATE DATABASE bb_sync_test;"
+
+      - name: Verify migration up/down (116 checks)
+        working-directory: apps/api
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/bb_migration_test
+        run: node verify-migrations.js
+
+      - name: Verify entities == migration (schema-drift guard)
+        working-directory: apps/api
+        env:
+          SYNC_URL: postgres://postgres:postgres@localhost:5432/bb_sync_test
+          MIGRATION_URL: postgres://postgres:postgres@localhost:5432/bb_migration_test
+        run: node verify-migration-schema.js
+
+  worker:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build worker
+        run: npm run build --workspace=@brand-beats/worker
+
+      - name: Create test database
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -c "CREATE DATABASE bb_worker_test;"
+
+      - name: Verify worker (13 checks, real Postgres + Redis)
+        working-directory: apps/worker
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/bb_worker_test
+          REDIS_URL: redis://localhost:6379
+          WORKER_QUEUES_ENABLED: "true"
+        run: node verify-worker.js
+
+  storefront:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build storefront
+        run: npm run build --workspace=@brand-beats/storefront
+
+      - name: Verify storefront (25 checks incl. XSS)
+        run: npm run verify --workspace=@brand-beats/storefront
+
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build API
+        run: npm run build --workspace=@brand-beats/api
+
+      - name: Build storefront
+        run: npm run build --workspace=@brand-beats/storefront
+
+      - name: End-to-end (real API + storefront, HTTP-seeded)
+        working-directory: apps/storefront
+        env:
+          E2E_DB_PASSWORD: postgres
+        run: node verify-e2e.js
