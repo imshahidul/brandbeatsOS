@@ -40,6 +40,11 @@ export class AdminController {
     return this.themes.listAllThemes();
   }
 
+  @Get(':id/versions')
+  listVersions(@Param('id') id: string) {
+    return this.themes.listVersions(id);
+  }
+
   @Post(':id/versions')
   publishVersion(
     @Param('id') id: string,

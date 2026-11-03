@@ -1,1 +1,23 @@
-{"dependencies":{"next":"^15.0.0","react":"^19.0.0","react-dom":"^19.0.0"},"devDependencies":{"@types/node":"^22.0.0","@types/react":"^19.0.0","@types/react-dom":"^19.0.0","tsx":"^4.0.0","typescript":"^5.5.0"},"name":"@brand-beats/storefront","private":true,"scripts":{"build":"next build","dev":"next dev","start":"next start","verify":"tsx verify-storefront.tsx"},"version":"0.1.0"}
+{
+  "dependencies": {
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.5.0"
+  },
+  "name": "@brand-beats/storefront",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev",
+    "start": "next start",
+    "verify": "tsx verify-storefront.tsx && tsx verify-admin.tsx"
+  },
+  "version": "0.1.0"
+}

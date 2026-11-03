@@ -49,14 +49,18 @@ export class TenantsService {
     return tenant;
   }
 
-  async listForUser(userId: string): Promise<(Tenant & { role: TenantRole })[]> {
-    const memberships = await this.members.find({ where: { userId } });
+  async listForUser(userId: string): Promise<(Tenant & { role: TenantRole })[]> {    const memberships = await this.members.find({ where: { userId } });
     if (memberships.length === 0) return [];
     const tenants = await this.tenants.findBy({
       id: In(memberships.map((m) => m.tenantId)),
     });
     const roleByTenant = new Map(memberships.map((m) => [m.tenantId, m.role]));
     return tenants.map((t) => ({ ...t, role: roleByTenant.get(t.id)! }));
+  }
+
+  /** Platform-wide tenant list (platform_admin only). */
+  async listAll(): Promise<Tenant[]> {
+    return this.tenants.find({ order: { createdAt: 'DESC' } });
   }
 
   findMembership(

@@ -62,13 +62,12 @@ node packages/theme-sdk/verify.js
 
 ## Honest backlog (not done yet)
 
-- Storefront renderer + merchant dashboard frontend (Next.js) consuming the
-  preview/published documents; sandboxed iframe renderer.
 - Paid theme enforcement (monetization field exists; no billing wired).
 - Push/email notifications for update availability (currently pull via `GET /v1/updates`;
   the `update-notifications` queue exists, processor returns an explicit
   not-implemented marker until a provider is wired).
 - Theme publish pipeline: dependency scanning, automated responsive/a11y/perf tests.
+- Multi-store switching in the storefront (v0 uses the merchant's first tenant).
 
 ## Done after handover (see git log)
 
@@ -113,6 +112,19 @@ node packages/theme-sdk/verify.js
   (from `apps/api`), hand-review before committing.
 - CI pipeline: `.github/workflows/ci.yml` runs all `verify-*.js` scripts
   plus `npm audit` on every push/PR.
+- Platform admin dashboard (`apps/storefront/app/admin`): platform_admin login
+  (no tenant required — `loginAction` branches on the JWT roles claim) lands on
+  `/admin`, guarded by `requireAdmin()` (API re-verifies the role per call).
+  Stats (themes / published versions / stores), theme table with visibility
+  toggle + per-theme publish-version form (manifest + config schema JSON,
+  SDK-validated), create-theme form, one-click safe-update auto-apply
+  (`POST /v1/admin/themes/updates/auto-apply`, compatible-only), and a
+  cross-tenant store list (`GET /v1/admin/tenants` via new `PlatformController`;
+  `TenantsService.listAll()`; `GET /v1/admin/themes/:id/versions` added).
+  All mutations use `useActionState` server actions returning `{ok, message}`.
+  Verified by `verify-admin.tsx` (29 checks: role helpers, form components,
+  page wiring, API routes) — `npm run verify` now runs both suites
+  (25 + 29 checks).
 
 ## Production notes
 
