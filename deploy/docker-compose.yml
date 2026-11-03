@@ -1,0 +1,39 @@
+services:
+  api:
+    build: ../apps/api
+    env_file: ../.env
+    depends_on: [db, redis]
+    restart: unless-stopped
+
+  worker:
+    build: ../apps/worker
+    env_file: ../.env
+    depends_on: [db, redis]
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    env_file: ../.env
+    volumes: [pgdata:/var/lib/postgresql/data]
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes: [redisdata:/data]
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+      - caddyconfig:/config
+    depends_on: [api]
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
+  caddydata:
+  caddyconfig:
