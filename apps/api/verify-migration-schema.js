@@ -15,6 +15,7 @@
 const { DataSource } = require('typeorm');
 const { InitialSchema1793702244000 } = require('./dist/database/migrations/1793702244000-InitialSchema');
 const { AddProducts1793790000000 } = require('./dist/database/migrations/1793790000000-AddProducts');
+const { AddProductSpecs1793800000000 } = require('./dist/database/migrations/1793800000000-AddProductSpecs');
 const { User } = require('./dist/users/user.entity');
 const { RefreshToken } = require('./dist/auth/refresh-token.entity');
 const { AuditLog } = require('./dist/audit/audit-log.entity');
@@ -31,7 +32,7 @@ const { Product } = require('./dist/products/product.entity');
 const ENTITIES = [User, RefreshToken, AuditLog, Tenant, TenantMember, Theme, ThemeVersion, ThemeInstall, MerchantThemeSettings, PublishedSnapshot, UpdateStaging, Product];
 
 async function snapshot(url, setup) {
-  const ds = new DataSource({ type: 'postgres', url, entities: ENTITIES, migrations: [InitialSchema1793702244000, AddProducts1793790000000], synchronize: false });
+  const ds = new DataSource({ type: 'postgres', url, entities: ENTITIES, migrations: [InitialSchema1793702244000, AddProducts1793790000000, AddProductSpecs1793800000000], synchronize: false });
   await ds.initialize();
   await setup(ds);
   const rows = await ds.query(

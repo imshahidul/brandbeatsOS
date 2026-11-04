@@ -48,6 +48,7 @@ export function createProduct(
     collection?: string;
     description?: string;
     isActive?: boolean;
+    showcaseSections?: string[];
   },
 ): Promise<Product> {
   return productApi<Product>('/products', token, tenantId, {

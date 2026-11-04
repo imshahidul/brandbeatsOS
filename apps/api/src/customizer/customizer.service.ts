@@ -223,6 +223,11 @@ export class CustomizerService {
         price: Number(p.price),
         currency: p.currency,
         imageUrl: p.imageUrl,
+        onBodyImageUrl: p.onBodyImageUrl,
+        description: p.description,
+        material: p.material,
+        color: p.color,
+        size: p.size,
         collection: p.collection,
       })),
     };

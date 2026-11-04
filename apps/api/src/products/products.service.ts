@@ -32,6 +32,11 @@ export class ProductsService {
       price: String(dto.price ?? 0),
       currency: (dto.currency ?? 'BDT').toUpperCase(),
       imageUrl: dto.imageUrl ?? null,
+      onBodyImageUrl: dto.onBodyImageUrl ?? null,
+      material: dto.material?.trim() ?? null,
+      color: dto.color?.trim() ?? null,
+      size: dto.size?.trim() ?? null,
+      showcaseSections: dto.showcaseSections ?? null,
       collection: (dto.collection ?? 'all').trim().toLowerCase() || 'all',
       isActive: dto.isActive ?? true,
     });
@@ -64,6 +69,11 @@ export class ProductsService {
     if (dto.price !== undefined) product.price = String(dto.price);
     if (dto.currency !== undefined) product.currency = dto.currency.toUpperCase();
     if (dto.imageUrl !== undefined) product.imageUrl = dto.imageUrl;
+    if (dto.onBodyImageUrl !== undefined) product.onBodyImageUrl = dto.onBodyImageUrl;
+    if (dto.material !== undefined) product.material = dto.material?.trim() ?? null;
+    if (dto.color !== undefined) product.color = dto.color?.trim() ?? null;
+    if (dto.size !== undefined) product.size = dto.size?.trim() ?? null;
+    if (dto.showcaseSections !== undefined) product.showcaseSections = dto.showcaseSections;
     if (dto.collection !== undefined)
       product.collection = dto.collection.trim().toLowerCase() || 'all';
     if (dto.isActive !== undefined) product.isActive = dto.isActive;

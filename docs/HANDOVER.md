@@ -67,7 +67,8 @@ node packages/theme-sdk/verify.js
   the `update-notifications` queue exists, processor returns an explicit
   not-implemented marker until a provider is wired).
 - Theme publish pipeline: dependency scanning, automated responsive/a11y/perf tests.
-- Multi-store switching in the storefront (v0 uses the merchant's first tenant).
+- Category/product/cart page previews (homepage preview only); §4 presentation
+  engine; §14 analytics — see spec §1–§16 accounting in chat history (2026-11-03).
 
 ## Done after handover (see git log)
 
@@ -139,6 +140,36 @@ node packages/theme-sdk/verify.js
   status, delete), add-product form, theme cards — all mutations revalidate
   the page. Verified by `verify-products.js` (8 checks) + 6 new
   render/XSS checks in `verify-storefront.tsx` (now 30).
+- Merchant storefront UI (`apps/storefront`): the API-only customizer is now
+  visual. `/marketplace` — browse/search/filter public themes (by category,
+  style), install with one click. `/customize/[installId]` — schema-driven
+  design controls (colors, enums, numbers auto-rendered from the theme's
+  `config.schema.json`), homepage section builder (add/remove/reorder/hide,
+  per-section settings editor, `maxInstances` respected), live draft preview
+  iframe, publish button. `/preview/[installId]` — desktop/tablet/mobile
+  device switcher + link to customizer. `/dashboard` — theme cards with
+  customize / live-preview / uninstall / auto-update toggle, "Browse themes"
+  link, and a store switcher for multi-tenant merchants (membership verified
+  server-side before switching the `bb_tenant` cookie). Server actions:
+  `installThemeAction`, `uninstallThemeAction`, `setAutoUpdateAction`,
+  `saveCustomizerSettingsAction`, `saveCustomizerSectionsAction`,
+  `publishCustomizerAction`, `switchStoreAction`. Verified by new component +
+  page-wiring checks in `verify-storefront.tsx` (now 64) — still 29 in
+  `verify-admin.tsx`.
+- ORZR Fashion theme (`themes/orzr-fashion/`): premium minimal fashion
+  storefront (warm `#f7f4ee` canvas via new `brand.backgroundColor` setting,
+  honored by `Storefront`). New section types with renderers:
+  `showcase-hero` (editorial split — large featured product, letterspaced
+  eyebrow, price, collection counter, decorative prev/next) and
+  `category-tabs` (script-free anchor tabs jumping to `#collection-<slug>`
+  rails; `ProductRail` sections now carry that id). Manifest + config schema
+  SDK-validated. Demo garment photography in
+  `apps/storefront/public/demo/` (4 AI shots, hanger on warm beige).
+  Screenshots: `~/workspace/your_files/demo/orzr-showcase.png`,
+  `orzr-rail.png`.
+- Products `imageUrl` validation now allows hosts without a TLD
+  (`require_tld: false`) so local/dev image URLs (e.g. localhost demo
+  assets) validate.
 
 ## Production notes
 

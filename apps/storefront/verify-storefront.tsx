@@ -20,6 +20,9 @@ function check(name: string, cond: boolean) {
   }
 }
 
+type ActionState = { ok: boolean; message: string };
+const dummyAction = async (): Promise<ActionState> => ({ ok: false, message: '' });
+
 const doc: PreviewDocument = {
   branding: {
     name: 'Shahidul Fashion House',
@@ -32,10 +35,10 @@ const doc: PreviewDocument = {
     layout: { borderRadius: 'lg', containerWidth: 'wide' },
   },
   products: [
-    { id: 'p1', name: 'Silk Panjabi', price: 1899, currency: 'BDT', imageUrl: null, collection: 'best-sellers' },
-    { id: 'p2', name: 'Denim Jacket', price: 2499.5, currency: 'BDT', imageUrl: null, collection: 'best-sellers' },
-    { id: 'p3', name: '<img src=x onerror=alert(1)>', price: 999, currency: 'BDT', imageUrl: 'javascript:alert(1)', collection: 'best-sellers' },
-    { id: 'p4', name: 'Kurti', price: 1299, currency: 'BDT', imageUrl: null, collection: 'new-arrivals' },
+    { id: 'p1', name: 'Silk Panjabi', price: 1899, currency: 'BDT', imageUrl: null, onBodyImageUrl: null, description: null, material: null, color: null, size: null, collection: 'best-sellers' },
+    { id: 'p2', name: 'Denim Jacket', price: 2499.5, currency: 'BDT', imageUrl: null, onBodyImageUrl: null, description: null, material: null, color: null, size: null, collection: 'best-sellers' },
+    { id: 'p3', name: '<img src=x onerror=alert(1)>', price: 999, currency: 'BDT', imageUrl: 'javascript:alert(1)', onBodyImageUrl: null, description: null, material: null, color: null, size: null, collection: 'best-sellers' },
+    { id: 'p4', name: 'Kurti', price: 1299, currency: 'BDT', imageUrl: null, onBodyImageUrl: null, description: null, material: null, color: null, size: null, collection: 'new-arrivals' },
   ],
   sections: [
     {
@@ -117,12 +120,149 @@ async function main() {
   check('zero script tags in page', !page.includes('<script'));
   check('branding survives in page', page.includes('Shahidul Fashion House'));
 
-  console.log('== sandbox wiring (static source checks) ==');
+  console.log('== ORZR fashion sections ==');
+  const { ShowcaseHero, CategoryTabs } = await import('./components/sections');
+  const theme2 = { primaryColor: '#1c1a17', accentColor: '#a39e93', radius: '4px' };
+  const orzrProducts = [
+    { id: 'p1', name: 'Oversized Shirt', price: 8900, currency: 'BDT', imageUrl: null, onBodyImageUrl: null, description: 'A relaxed oversized shirt.', material: 'Cotton 100%', color: 'Black', size: '1 / 2', collection: 'clothing' },
+    { id: 'p2', name: 'Pale Over Shirt', price: 9200, currency: 'BDT', imageUrl: 'https://cdn.example.com/shirt.jpg', onBodyImageUrl: null, description: null, material: null, color: null, size: null, collection: 'clothing' },
+  ];
+  const scHtml = renderToStaticMarkup(
+    <ShowcaseHero settings={{ collection: 'clothing' }} theme={theme2} mode="preview" products={orzrProducts} />,
+  );
+  check('rack shows all products on hangers', scHtml.includes('Oversized Shirt') && scHtml.includes('Pale Over Shirt'));
+  check('diagonal rail (no flat strip)', scHtml.includes('rotate(13deg)'));
+  check('scroll/drag browse, no arrow buttons', scHtml.includes('overflow-x:auto') && !scHtml.includes('← 01') );
+  check('hover/active select css', scHtml.includes('.orzr-garment:hover') && scHtml.includes('.orzr-garment:active'));
+  check('hover info panel per garment', scHtml.includes('gpanel') && scHtml.includes('View product'));
+  check('rack items link to product pages', scHtml.includes('#detail-p1') && scHtml.includes('#detail-p2'));
+  check('product page has specs', scHtml.includes('Material') && scHtml.includes('Cotton 100%'));
+  check('product page has description', scHtml.includes('relaxed oversized shirt'));
+  check('product page has add to bag', scHtml.includes('#bag-p1') && scHtml.includes('Add to bag'));
+  check('bag modal has total + checkout', scHtml.includes('Your bag') && scHtml.includes('Proceed to checkout'));
+  check('css-only modals', scHtml.includes('orzr-modal:target'));
+  const tabsHtml = renderToStaticMarkup(
+    <CategoryTabs settings={{ tabs: ['clothing', 'accessory'] }} theme={theme2} mode="preview" />,
+  );
+  check('category tabs render links', tabsHtml.includes('#collection-clothing') && tabsHtml.includes('#collection-accessory'));
+  check('category tabs labels', tabsHtml.includes('clothing') && tabsHtml.includes('accessory'));
+  const tabsEmpty = renderToStaticMarkup(
+    <CategoryTabs settings={{}} theme={theme2} mode="preview" />,
+  );
+  check('category tabs empty renders nothing', tabsEmpty === '');
+
+  console.log('== editorial header ==');
+  const { Storefront: SF2 } = await import('./components/storefront');
+  const edHtml = renderToStaticMarkup(
+    <SF2 doc={{ branding: { name: 'Aurora', logoUrl: null, faviconUrl: null }, theme: { slug: 'orzr-fashion', name: 'ORZR', version: '1.0.0' }, settings: { brand: { backgroundColor: '#f7f4ee' }, layout: { headerStyle: 'editorial' } }, sections: [], products: [] }} mode="preview" />,
+  );
+  check('editorial header has nav', edHtml.includes('CLOTHING') || edHtml.includes('Clothing'));
+  check('editorial header has search/menu', edHtml.includes('Search') && edHtml.includes('Menu'));
+  check('editorial header honors canvas color', edHtml.includes('#f7f4ee'));
+
+  console.log('== merchant UI components ==');
+  const { InstallThemeButton } = await import('./components/marketplace-forms');
+  const { CustomizerClient } = await import('./components/customizer-client');
+  const { DevicePreview } = await import('./components/device-preview');
+  const { UninstallButton, AutoUpdateToggle, StoreSwitcher } = await import('./components/dashboard-forms');
+
+  const installHtml = renderToStaticMarkup(
+    <InstallThemeButton action={dummyAction} slug="starter-fashion" themeName="Starter Fashion" />,
+  );
+  check('install button has slug hidden input', installHtml.includes('name="slug"'));
+  check('install button labels theme', installHtml.includes('Starter Fashion'));
+
+  const czHtml = renderToStaticMarkup(
+    <CustomizerClient
+      installId="inst-1"
+      themeName="v1.0.0"
+      initialSettings={{
+        brand: { primaryColor: '#b3123f', accentColor: '#f59e0b', fontFamily: 'playfair' },
+        layout: { borderRadius: 'lg', containerWidth: 'wide' },
+      }}
+      initialSections={[
+        { id: 's1', type: 'hero-banner', settings: { title: 'Hello' }, hidden: false },
+      ]}
+      configSchema={{
+        type: 'object',
+        properties: {
+          brand: {
+            type: 'object',
+            properties: {
+              primaryColor: { type: 'string' },
+              fontFamily: { type: 'string', enum: ['inter', 'playfair'] },
+            },
+          },
+          layout: {
+            type: 'object',
+            properties: { borderRadius: { type: 'string', enum: ['sm', 'lg'] } },
+          },
+        },
+      }}
+      blueprints={[
+        { type: 'hero-banner', name: 'Hero Banner', maxInstances: null, defaultSettings: { title: '' } },
+        { type: 'product-rail', name: 'Product Rail', maxInstances: 4, defaultSettings: { heading: '' } },
+      ]}
+      saveSettingsAction={dummyAction}
+      saveSectionsAction={dummyAction}
+      publishAction={dummyAction}
+    />,
+  );
+  check('customizer renders color control', czHtml.includes('type="color"'));
+  check('customizer renders enum select', czHtml.includes('<select'));
+  check('customizer lists sections', czHtml.includes('Hero Banner') || czHtml.includes('hero-banner'));
+  check('customizer has add-section palette', czHtml.includes('Product Rail'));
+  check('customizer has save + publish', czHtml.includes('Publish storefront'));
+  check('customizer embeds live preview iframe', czHtml.includes('/preview/inst-1/html'));
+
+  const devHtml = renderToStaticMarkup(<DevicePreview installId="inst-1" />);
+  check('device preview has desktop/tablet/mobile', devHtml.includes('Desktop') && devHtml.includes('Tablet') && devHtml.includes('Mobile'));
+
+  const unHtml = renderToStaticMarkup(
+    <UninstallButton action={dummyAction} installId="i-1" themeName="X" />,
+  );
+  check('uninstall button carries install id', unHtml.includes('name="id"'));
+
+  const auHtml = renderToStaticMarkup(
+    <AutoUpdateToggle action={dummyAction} installId="i-1" current="manual" />,
+  );
+  check('auto-update toggle shows current policy', auHtml.includes('Auto-update: off'));
+
+  const swHtml = renderToStaticMarkup(
+    <StoreSwitcher action={async () => {}} tenants={[{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }]} currentId="a" />,
+  );
+  check('store switcher lists stores', swHtml.includes('<select') && swHtml.includes('>A<'));
+  const swSingle = renderToStaticMarkup(
+    <StoreSwitcher action={async () => {}} tenants={[{ id: 'a', name: 'A' }]} currentId="a" />,
+  );
+  check('store switcher hidden for single store', swSingle === '');
+
+  console.log('== merchant page wiring (static source checks) ==');
+  const mpSrc = readFileSync(join(__dirname, 'app/marketplace/page.tsx'), 'utf8');
+  check('marketplace fetches themes with filters', mpSrc.includes('fetchThemes'));
+  check('marketplace has search form', mpSrc.includes('name="search"'));
+  check('marketplace install wired to action', mpSrc.includes('installThemeAction'));
+  const czSrc = readFileSync(join(__dirname, 'app/customize/[installId]/page.tsx'), 'utf8');
+  check('customize page fetches draft', czSrc.includes('fetchDraft'));
+  check('customize page renders CustomizerClient', czSrc.includes('CustomizerClient'));
+  const dashSrc = readFileSync(join(__dirname, 'app/dashboard/page.tsx'), 'utf8');
+  check('dashboard links marketplace', dashSrc.includes('/marketplace'));
+  check('dashboard links customize', dashSrc.includes('/customize/'));
+  check('dashboard has uninstall', dashSrc.includes('uninstallThemeAction'));
+  check('dashboard has auto-update toggle', dashSrc.includes('setAutoUpdateAction'));
+  check('dashboard has store switcher', dashSrc.includes('switchStoreAction'));
+  const actSrc = readFileSync(join(__dirname, 'lib/actions.ts'), 'utf8');
+  check('actions: install/switch/uninstall/auto-update present',
+    actSrc.includes('installThemeAction') && actSrc.includes('uninstallThemeAction') && actSrc.includes('setAutoUpdateAction'));
+  check('actions: customizer save/publish present',
+    actSrc.includes('saveCustomizerSettingsAction') && actSrc.includes('saveCustomizerSectionsAction') && actSrc.includes('publishCustomizerAction'));
+  check('actions: store switch verifies membership', actSrc.includes('fetchMyTenants'));
   const pageSrc = readFileSync(join(__dirname, 'app/preview/[installId]/page.tsx'), 'utf8');
   const routeSrc = readFileSync(join(__dirname, 'app/preview/[installId]/html/route.ts'), 'utf8');
   check('preview iframe uses empty sandbox attribute', pageSrc.includes('sandbox=""'));
   check('preview iframe does not use srcDoc', !pageSrc.includes('srcDoc'));
   check('route sends CSP sandbox header', routeSrc.includes("'Content-Security-Policy': 'sandbox;'"));
+  check('preview page has device mode switcher', pageSrc.includes('DevicePreview'));
 
   console.log(`\n${passed} passed, ${failed} failed`);
   if (failed > 0) process.exit(1);

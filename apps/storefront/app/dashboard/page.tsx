@@ -8,8 +8,12 @@ import {
   requireSession,
   createProductAction,
   deleteProductAction,
+  uninstallThemeAction,
+  setAutoUpdateAction,
+  switchStoreAction,
 } from '../../lib/actions';
 import { AddProductForm, DeleteProductButton } from '../../components/merchant-forms';
+import { UninstallButton, AutoUpdateToggle, StoreSwitcher } from '../../components/dashboard-forms';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,13 +51,13 @@ const td: React.CSSProperties = {
 export default async function DashboardPage() {
   const { token, tenantId } = await requireSession();
 
-  let installs, products, storeName;
+  let installs, products, tenants, storeName;
   try {
-    [installs, products] = await Promise.all([
+    [installs, products, tenants] = await Promise.all([
       fetchInstalls(token, tenantId),
       fetchProducts(token, tenantId),
+      fetchMyTenants(token),
     ]);
-    const tenants = await fetchMyTenants(token);
     storeName = tenants.find((t) => t.id === tenantId)?.name ?? 'My store';
   } catch {
     redirect('/'); // token expired or invalid
@@ -71,19 +75,28 @@ export default async function DashboardPage() {
   return (
     <div style={page}>
       <div style={wrap}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, gap: 12, flexWrap: 'wrap' }}>
           <div>
             <h1 style={{ margin: 0, fontSize: 24 }}>{storeName}</h1>
             <p style={{ margin: '4px 0 0', color: '#71717a', fontSize: 14 }}>Merchant dashboard</p>
           </div>
-          <form action={logoutAction}>
-            <button
-              type="submit"
-              style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontSize: 14 }}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <StoreSwitcher action={switchStoreAction} tenants={tenants} currentId={tenantId} />
+            <Link
+              href="/marketplace"
+              style={{ background: '#111', color: '#fff', borderRadius: 8, padding: '8px 16px', textDecoration: 'none', fontSize: 14 }}
             >
-              Sign out
-            </button>
-          </form>
+              🎨 Browse themes
+            </Link>
+            <form action={logoutAction}>
+              <button
+                type="submit"
+                style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontSize: 14 }}
+              >
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 16 }}>
@@ -150,33 +163,40 @@ export default async function DashboardPage() {
         </div>
 
         <div style={card}>
-          <h2 style={{ margin: '0 0 12px', fontSize: 18 }}>Themes</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h2 style={{ margin: 0, fontSize: 18 }}>Themes</h2>
+            <Link href="/marketplace" style={{ fontSize: 14, color: '#111' }}>+ Install a theme</Link>
+          </div>
           {installs.length === 0 ? (
             <p style={{ color: '#71717a', fontSize: 14 }}>
-              No themes installed yet. Install one from the marketplace to preview it here.
+              No themes installed yet. <Link href="/marketplace" style={{ color: '#111' }}>Browse the marketplace</Link> to install one.
             </p>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}>
               {installs.map((i) => (
                 <div key={i.id} style={{ border: '1px solid #eee', borderRadius: 10, padding: 16 }}>
                   <div style={{ fontWeight: 600, fontSize: 15 }}>{i.theme?.name ?? i.themeId}</div>
                   <div style={{ fontSize: 13, color: '#71717a', margin: '4px 0 12px' }}>
-                    v{i.activeVersion?.version ?? '?'} · auto-update: {i.autoUpdatePolicy}
+                    v{i.activeVersion?.version ?? '?'}
                   </div>
-                  <Link
-                    href={`/preview/${i.id}`}
-                    style={{
-                      display: 'inline-block',
-                      padding: '8px 16px',
-                      borderRadius: 8,
-                      background: '#111',
-                      color: '#fff',
-                      textDecoration: 'none',
-                      fontSize: 14,
-                    }}
-                  >
-                    Live preview
-                  </Link>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+                    <AutoUpdateToggle action={setAutoUpdateAction} installId={i.id} current={i.autoUpdatePolicy} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    <Link
+                      href={`/preview/${i.id}`}
+                      style={{ padding: '7px 12px', borderRadius: 8, background: '#111', color: '#fff', textDecoration: 'none', fontSize: 13 }}
+                    >
+                      Live preview
+                    </Link>
+                    <Link
+                      href={`/customize/${i.id}`}
+                      style={{ padding: '7px 12px', borderRadius: 8, background: '#eef2ff', color: '#4338ca', textDecoration: 'none', fontSize: 13, fontWeight: 600 }}
+                    >
+                      🎨 Customize
+                    </Link>
+                    <UninstallButton action={uninstallThemeAction} installId={i.id} themeName={i.theme?.name ?? i.themeId} />
+                  </div>
                 </div>
               ))}
             </div>

@@ -3,6 +3,8 @@ import type { PreviewDocument, SectionInstance, ProductSummary } from '../lib/pr
 import {
   HeroBanner,
   ProductRail,
+  ShowcaseHero,
+  CategoryTabs,
   UnknownSection,
   type ThemeTokens,
 } from './sections';
@@ -49,6 +51,10 @@ function SectionRenderer({
       return <HeroBanner settings={section.settings} theme={theme} mode={mode} />;
     case 'product-rail':
       return <ProductRail settings={section.settings} theme={theme} mode={mode} products={products} />;
+    case 'showcase-hero':
+      return <ShowcaseHero settings={section.settings} theme={theme} mode={mode} products={products} />;
+    case 'category-tabs':
+      return <CategoryTabs settings={section.settings} theme={theme} mode={mode} />;
     default:
       return <UnknownSection type={section.type} mode={mode} />;
   }
@@ -70,9 +76,45 @@ export function Storefront({
   };
   const fontFamily = FONT_STACKS[brand.fontFamily as string] ?? FONT_STACKS.inter;
   const maxWidth = CONTAINER_WIDTHS[layout.containerWidth as string] ?? CONTAINER_WIDTHS.wide;
+  const canvas = typeof brand.backgroundColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(brand.backgroundColor)
+    ? brand.backgroundColor
+    : '#ffffff';
 
   return (
-    <div style={{ fontFamily, color: '#1a1a1a', background: '#ffffff', minHeight: '100vh' }}>
+    <div style={{ fontFamily, color: '#1a1a1a', background: canvas, minHeight: '100vh' }}>
+      {layout.headerStyle === 'editorial' ? (
+        <header
+          style={{
+            padding: '18px 32px',
+            display: 'grid',
+            gridTemplateColumns: '1fr auto 1fr',
+            alignItems: 'center',
+          }}
+        >
+          <span style={{ fontSize: 15, letterSpacing: 6, fontWeight: 500 }}>{doc.branding.name.toUpperCase()}</span>
+          <nav style={{ display: 'flex', gap: 28 }}>
+            {[
+              ['Clothing', '#collection-clothing'],
+              ['Accessory', '#collection-accessory'],
+              ['Journal', '#'],
+              ['About', '#'],
+            ].map(([label, href]) => (
+              <a
+                key={label}
+                href={href}
+                style={{ fontSize: 10, letterSpacing: 2, color: '#555', textDecoration: 'none', textTransform: 'uppercase' }}
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
+          <div style={{ display: 'flex', gap: 20, justifyContent: 'flex-end', alignItems: 'center' }}>
+            <span style={{ fontSize: 10, letterSpacing: 2, color: '#555', textTransform: 'uppercase' }}>Search</span>
+            <span style={{ fontSize: 10, letterSpacing: 2, color: '#555', textTransform: 'uppercase' }}>Menu</span>
+            <span style={{ fontSize: 14, color: '#333' }} aria-hidden>☰</span>
+          </div>
+        </header>
+      ) : (
       <header
         style={{
           borderBottom: '1px solid #eee',
@@ -91,6 +133,7 @@ export function Storefront({
         ) : null}
         <span style={{ fontSize: 20, fontWeight: 700 }}>{doc.branding.name}</span>
       </header>
+      )}
 
       <main style={{ maxWidth, margin: '0 auto', padding: '0 24px 48px' }}>
         {doc.sections

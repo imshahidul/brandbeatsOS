@@ -21,10 +21,12 @@ export interface ThemeSettings {
     primaryColor?: string;
     accentColor?: string;
     fontFamily?: string;
+    backgroundColor?: string;
   };
   layout?: {
     borderRadius?: string;
     containerWidth?: string;
+    headerStyle?: string;
   };
 }
 
@@ -52,6 +54,11 @@ export interface ProductSummary {
   price: number;
   currency: string;
   imageUrl: string | null;
+  onBodyImageUrl: string | null;
+  description: string | null;
+  material: string | null;
+  color: string | null;
+  size: string | null;
   collection: string;
 }
 

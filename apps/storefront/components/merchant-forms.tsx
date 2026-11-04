@@ -47,6 +47,15 @@ export function AddProductForm({
           {pending ? 'Adding…' : 'Add product'}
         </button>
       </div>
+      <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 13, color: '#555' }}>
+        <span style={{ letterSpacing: 1, fontSize: 11, color: '#888' }}>SHOW IN:</span>
+        <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
+          <input type="checkbox" name="showcaseSections" value="rail" /> Hanger Rail
+        </label>
+        <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
+          <input type="checkbox" name="showcaseSections" value="spotlight" /> Spotlight
+        </label>
+      </div>
       <Result state={state} />
     </form>
   );

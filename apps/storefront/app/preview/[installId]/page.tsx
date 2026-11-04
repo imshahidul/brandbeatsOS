@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { fetchPreviewDocument } from '../../../lib/preview';
 import { requireSession } from '../../../lib/actions';
+import { DevicePreview } from '../../../components/device-preview';
 
 /**
  * Sandboxed live preview of a merchant's storefront.
@@ -47,19 +48,23 @@ export default async function PreviewPage({
         <h1 style={{ margin: 0, fontSize: 18 }}>
           Preview · {doc.branding.name} · {doc.theme.name} v{doc.theme.version}
         </h1>
+        <Link
+          href={`/customize/${installId}`}
+          style={{
+            marginLeft: 'auto',
+            padding: '7px 14px',
+            borderRadius: 8,
+            background: '#eef2ff',
+            color: '#4338ca',
+            textDecoration: 'none',
+            fontSize: 13,
+            fontWeight: 600,
+          }}
+        >
+          🎨 Customize
+        </Link>
       </div>
-      <iframe
-        title={`Storefront preview of ${doc.branding.name}`}
-        sandbox=""
-        src={`/preview/${installId}/html`}
-        style={{
-          width: '100%',
-          height: '80vh',
-          border: '1px solid #ddd',
-          borderRadius: 12,
-          background: '#fff',
-        }}
-      />
+      <DevicePreview installId={installId} />
       <p style={{ fontSize: 12, color: '#888', marginTop: 8 }}>
         Sandboxed preview — the storefront runs in a fully isolated iframe
         with no script execution.

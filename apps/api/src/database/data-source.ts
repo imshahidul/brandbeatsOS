@@ -11,7 +11,11 @@ import { ThemeInstall } from '../marketplace/theme-install.entity';
 import { MerchantThemeSettings } from '../customizer/merchant-theme-settings.entity';
 import { PublishedSnapshot } from '../customizer/published-snapshot.entity';
 import { UpdateStaging } from '../updates/update-staging.entity';
+import { Product } from '../products/product.entity';
 import { InitialSchema1793702244000 } from './migrations/1793702244000-InitialSchema';
+import { AddProducts1793790000000 } from './migrations/1793790000000-AddProducts';
+import { AddProductSpecs1793800000000 } from './migrations/1793800000000-AddProductSpecs';
+import { AddShowcaseSections1793810000000 } from './migrations/1793810000000-AddShowcaseSections';
 
 config();
 
@@ -35,7 +39,8 @@ export default new DataSource({
     MerchantThemeSettings,
     PublishedSnapshot,
     UpdateStaging,
+    Product,
   ],
-  migrations: [InitialSchema1793702244000],
+  migrations: [InitialSchema1793702244000, AddProducts1793790000000, AddProductSpecs1793800000000, AddShowcaseSections1793810000000],
   synchronize: false,
 });

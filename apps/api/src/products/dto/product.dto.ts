@@ -1,5 +1,7 @@
 import {
+  IsArray,
   IsBoolean,
+  IsIn,
   IsNumber,
   IsOptional,
   IsString,
@@ -8,6 +10,9 @@ import {
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+
+/** Allowed showcase section keys (extensible). */
+export const SHOWCASE_SECTIONS = ['rail', 'spotlight'] as const;
 
 export class CreateProductDto {
   @IsString()
@@ -36,8 +41,27 @@ export class CreateProductDto {
   currency?: string;
 
   @IsOptional()
-  @IsUrl({ require_protocol: true })
+  @IsUrl({ require_protocol: true, require_tld: false })
   imageUrl?: string;
+
+  @IsOptional()
+  @IsUrl({ require_protocol: true, require_tld: false })
+  onBodyImageUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  material?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  color?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  size?: string;
 
   @IsOptional()
   @IsString()
@@ -47,6 +71,11 @@ export class CreateProductDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @IsIn(SHOWCASE_SECTIONS, { each: true })
+  showcaseSections?: string[];
 }
 
 export class UpdateProductDto {
@@ -72,8 +101,27 @@ export class UpdateProductDto {
   currency?: string;
 
   @IsOptional()
-  @IsUrl({ require_protocol: true })
+  @IsUrl({ require_protocol: true, require_tld: false })
   imageUrl?: string;
+
+  @IsOptional()
+  @IsUrl({ require_protocol: true, require_tld: false })
+  onBodyImageUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  material?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  color?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  size?: string;
 
   @IsOptional()
   @IsString()
@@ -83,4 +131,9 @@ export class UpdateProductDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @IsIn(SHOWCASE_SECTIONS, { each: true })
+  showcaseSections?: string[];
 }
